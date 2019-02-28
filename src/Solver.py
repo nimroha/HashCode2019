@@ -150,16 +150,17 @@ def main(argv=None):
     print("Parsing...")
     numPhotos, photos = parseIn(inPath)
     photos.sort(key=lambda p: p['numTags'], reverse=True)
-    words = addOneHots2Photos(photos) #adds onhots to photos
-
+    print('hi')
+    words = addOneHots2Photos(photos) #adds onehots to photos
+    print('parsed words')
     verticals = [p for p in photos if p['orient'] == 'V']
 
     connected = vertConnect(verticals)
 
     horizs    = [p for p in photos if p['orient'] == 'H'] + connected
 
-    with open(os.path.splitext(inPath)[0] + '_horiz_only', 'wb') as fp:
-        pickle.dump(horizs, fp, pickle.HIGHEST_PROTOCOL)
+    # with open(os.path.splitext(inPath)[0] + '_horiz_only', 'wb') as fp:
+    #     pickle.dump(horizs, fp, pickle.HIGHEST_PROTOCOL)
 
     # plotHist([w['amount'] for w in words.values()], 'Word occurences')
     # plotHist([p['numTags'] for p in photos], 'Number of tags per photo')
