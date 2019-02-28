@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from sklearn.utils import shuffle
+
 INPUTS = {'a': '../inputs/a_example.txt',
           'b': '../inputs/b_lovely_landscapes.txt',
           'c': '../inputs/c_memorable_moments.txt',
@@ -118,7 +120,8 @@ def solveB(photos, startIdx=None):
         if len(notChosen) == 0:
             break
 
-        currIdx = np.random.choice(notChosen) # start fresh from not chosen
+        # currIdx = np.random.choice(notChosen) # start fresh from not chosen
+        currIdx = np.min(notChosen)
         slides.append(currIdx)
         chosen[currIdx] = 1
 
@@ -154,10 +157,14 @@ def main(argv=None):
     words = addOneHots2Photos(photos) #adds onehots to photos
     print('parsed words')
     verticals = [p for p in photos if p['orient'] == 'V']
+    horizs = [p for p in photos if p['orient'] == 'H']
+
+    ids = ['{} {}'.format(verticals[i]['id'], verticals[i+1]['id']) for i in range(0, len(verticals) - 1, 2)]
+    ids += [p['id'] for p in horizs]
 
     connected = vertConnect(verticals)
 
-    horizs    = [p for p in photos if p['orient'] == 'H'] + connected
+    both    = horizs + connected
 
     # with open(os.path.splitext(inPath)[0] + '_horiz_only', 'wb') as fp:
     #     pickle.dump(horizs, fp, pickle.HIGHEST_PROTOCOL)
@@ -167,9 +174,9 @@ def main(argv=None):
 
     print("Solving...")
     if args.i == 'b':
-        slides = solveB(horizs)
+        slides = solveB(both, startIdx=0)
     else:
-        slides = solveNotB(horizs)
+        slides = solveNotB(both)
 
     print(slides)
 
