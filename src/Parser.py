@@ -1,5 +1,3 @@
-import numpy as np
-
 
 def parseIn(path):
     with open(path, 'r') as fp:
@@ -7,9 +5,10 @@ def parseIn(path):
         photos    = []
         for line in fp:
             orientation, numTags, *tags = line.strip().split()
-            photos.append({'orientation': orientation,
-                           'numTags':     numTags,
-                           'tags':        tags})
+            photos.append({'orient':  orientation,
+                           'numTags': int(numTags),
+                           'tags':    tags,
+                           'id':      str(len(photos))})
 
     return numPhotos, photos
 
