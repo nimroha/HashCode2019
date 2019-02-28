@@ -23,15 +23,13 @@ def plotHist(lst, title):
 
 def oneHotRun(photos):
     words = {}
-    onehotSpace = 0
     for photo in photos:
         for tag in photo["tags"]:
             if tag not in words:
                 words[tag] = {
-                    "idx": onehotSpace,
+                    "idx": len(words),
                     "amount": 1
                 }
-                onehotSpace += 1
             else:
                 words[tag]['amount'] += 1
 
@@ -50,8 +48,27 @@ def addOneHots2Photos(photos):
 def matchVerticals(photos):
     pass #TODO
 
-def solveB(photos):
-    pass #TODO
+def solveB(photos, startIdx=None):
+    chosen  = np.zeros(shape=len(photos))
+    currIdx = startIdx or np.random.randint(0, len(photos))
+    slides  = [currIdx]
+    while np.sum(chosen) < len(photos):
+        for i in range(len(photos)):
+            if not chosen[i] and \
+               np.sum(np.logical_and(photos[currIdx]['oneHot'], photos[i]['oneHot'])) > 0:
+                slides.append(i)
+                currIdx   = i
+                chosen[i] = 1
+
+        currIdx = np.random.choice(np.squeeze(np.argwhere(chosen == 0))) # start fresh from not chosen
+        slides.append(currIdx)
+        chosen[currIdx] = 1
+
+    return slides
+
+def solveNotB(photos):
+    pass
+
 
 def main(argv=None):
 
@@ -64,29 +81,29 @@ def main(argv=None):
     inPath  = INPUTS[args.i]
     outPath = os.path.splitext(inPath)[0] + '_result.txt'
 
+
     print("Parsing...")
     numPhotos, photos = parseIn(inPath)
-
-    words = addOneHots2Photos(photos)
-    print(len(words))
-    print(words)
-    wordOc = [w['amount'] for w in words.values()]
-    plotHist(wordOc, 'Word occurences')
-    # plotHist([p['numTags'] for p in photos], 'Number of tags per photo')
-
     photos.sort(key=lambda p: p['numTags'], reverse=True)
+    words = addOneHots2Photos(photos) #adds onhots to photos
 
     verticals = [p for p in photos if p['orient'] == 'V']
     horizs    = [p for p in photos if p['orient'] == 'H']
 
 
+    # plotHist([w['amount'] for w in words.values()], 'Word occurences')
+    # plotHist([p['numTags'] for p in photos], 'Number of tags per photo')
 
     print("Solving...")
-    # TODO
+    if args.i == 'b':
+        slides = solveB(photos)
+    else:
+        slides = solveNotB(photos)
 
     # write solution to file
     print("Writing solution to file...")
-    # TODO
+    slideshow = [p['id'] for p in slides]
+    parseOut(outPath, slideshow)
 
     print("Done")
 
