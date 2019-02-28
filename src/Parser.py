@@ -13,6 +13,7 @@ def parseIn(path):
     return numPhotos, photos
 
 def parseOut(path, slideshow):
+    print(slideshow)
     with open(path, 'w') as fp:
-        fp.write(len(slideshow))
-        [fp.write(slide) for slide in slideshow]
+        fp.write('{}\n'.format(len(slideshow)))
+        [fp.write('{}\n'.format(slide)) for slide in slideshow]

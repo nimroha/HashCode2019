@@ -1,6 +1,7 @@
 import sys
 import argparse
 import os
+import pickle
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -48,26 +49,71 @@ def addOneHots2Photos(photos):
 def matchVerticals(photos):
     pass #TODO
 
+def vertConnect(verticals):
+    i = 0
+    while i < len(verticals):
+        j = i + 1
+        foundBest = 0
+        bestCommonTags = np.Inf
+        if i == len(verticals)-1:
+            del verticals[i]
+            return verticals
+        while j < len(verticals):
+            commonTags = np.sum(np.logical_and(verticals[i]["oneHot"], verticals[j]["oneHot"]).astype(int))
+            # print("i: {}, j: {}, commonTags: {}, len(verts): {}".format(i, j, commonTags, len(verticals)))
+            if commonTags == 0:
+                verticals[i]["oneHot"] = np.logical_or(verticals[i]["oneHot"], verticals[j]["oneHot"]).astype(int)
+                verticals[i]["id"] = verticals[i]["id"] + " " + verticals[j]["id"]
+                verticals[i]["numTags"] = verticals[i]["numTags"] + verticals[j]["numTags"]
+                del verticals[j]
+                foundBest = 1
+                break
+            elif commonTags < bestCommonTags:
+                BestJ = j
+            j += 1
+        if not foundBest:
+            verticals[i]["oneHot"] = np.logical_or(verticals[i]["oneHot"], verticals[BestJ]["oneHot"]).astype(int)
+            verticals[i]["id"] = verticals[i]["id"] + " " + verticals[BestJ]["id"]
+            verticals[i]["numTags"] = np.sum(verticals[i]["oneHot"])
+            del verticals[BestJ]
+        i += 1
+
+    return verticals
+
 def solveB(photos, startIdx=None):
     chosen  = np.zeros(shape=len(photos))
     currIdx = startIdx or np.random.randint(0, len(photos))
     slides  = [currIdx]
+    chosen[currIdx] = 1
     while np.sum(chosen) < len(photos):
         for i in range(len(photos)):
-            if not chosen[i] and \
+            if i != currIdx and \
+               not chosen[i] and \
                np.sum(np.logical_and(photos[currIdx]['oneHot'], photos[i]['oneHot'])) > 0:
                 slides.append(i)
                 currIdx   = i
                 chosen[i] = 1
 
-        currIdx = np.random.choice(np.squeeze(np.argwhere(chosen == 0))) # start fresh from not chosen
+        notChosen = np.squeeze(np.argwhere(chosen == 0))
+
+        if len(notChosen) == 0:
+            break
+
+        currIdx = np.random.choice(notChosen) # start fresh from not chosen
         slides.append(currIdx)
         chosen[currIdx] = 1
 
     return slides
 
+
 def solveNotB(photos):
-    pass
+    diff      = 2
+    lenSelect = photos[0]['numTags'] - diff
+    subPhotos = np.array([p for p in photos if lenSelect - diff <= p['numTags'] <= lenSelect + diff])
+
+    currIdx = np.random.randint(0, len(subPhotos))
+
+    return slides
 
 
 def main(argv=None):
@@ -88,21 +134,28 @@ def main(argv=None):
     words = addOneHots2Photos(photos) #adds onhots to photos
 
     verticals = [p for p in photos if p['orient'] == 'V']
-    horizs    = [p for p in photos if p['orient'] == 'H']
 
+    connected = vertConnect(verticals)
+
+    horizs    = [p for p in photos if p['orient'] == 'H'] + connected
+
+    with open(os.path.splitext(inPath)[0] + '_horiz_only', 'wb') as fp:
+        pickle.dump(horizs, fp, pickle.HIGHEST_PROTOCOL)
 
     # plotHist([w['amount'] for w in words.values()], 'Word occurences')
     # plotHist([p['numTags'] for p in photos], 'Number of tags per photo')
 
     print("Solving...")
     if args.i == 'b':
-        slides = solveB(photos)
+        slides = solveB(horizs)
     else:
-        slides = solveNotB(photos)
+        slides = solveNotB(horizs)
+
+    print(slides)
 
     # write solution to file
     print("Writing solution to file...")
-    slideshow = [p['id'] for p in slides]
+    slideshow = [photos[i]['id'] for i in slides]
     parseOut(outPath, slideshow)
 
     print("Done")
